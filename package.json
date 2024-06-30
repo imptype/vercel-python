@@ -1,5 +1,5 @@
 {
-  "name": "@imporg/vercel-python",
+  "name": "@imptype/vercel-python",
   "version": "4.3.0",
   "main": "./dist/index.js",
   "license": "Apache-2.0",
