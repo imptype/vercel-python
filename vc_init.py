@@ -200,7 +200,10 @@ elif 'app' in __vc_variables:
                 Runs until the response is completely read from the application.
                 """
                 if _use_legacy_asyncio:
-                    loop = asyncio.new_event_loop()
+                    try:
+                        loop = asyncio.get_running_loop()
+                    except RuntimeError:
+                        loop = asyncio.new_event_loop()
                     self.app_queue = asyncio.Queue(loop=loop)
                 else:
                     self.app_queue = asyncio.Queue()
