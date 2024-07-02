@@ -181,6 +181,7 @@ elif 'app' in __vc_variables:
 
 
         class ASGICycleState(enum.Enum):
+            STARTUP = enum.auto()
             REQUEST = enum.auto()
             RESPONSE = enum.auto()
 
@@ -189,7 +190,7 @@ elif 'app' in __vc_variables:
             def __init__(self, scope):
                 self.scope = scope
                 self.body = b''
-                self.state = ASGICycleState.REQUEST
+                self.state = ASGICycleState.REQUEST if scope['type'] == 'http' else ASGICycleState.STARTUP
                 self.app_queue = None
                 self.response = {}
 
@@ -204,7 +205,12 @@ elif 'app' in __vc_variables:
                     self.app_queue = asyncio.Queue(loop=loop)
                 else:
                     self.app_queue = asyncio.Queue()
-                self.put_message({'type': 'http.request', 'body': body, 'more_body': False})
+
+                if self.scope['type'] == 'http':
+                    self.put_message({'type': 'http.request', 'body': body or b'', 'more_body': False})
+                elif self.scope['type'] == 'lifespan':
+                    self.put_message({'type': 'lifespan.startup'})
+
                 await app(self.scope, self.receive, self.send)
                 return self.response
 
@@ -251,6 +257,12 @@ elif 'app' in __vc_variables:
                     if not more_body:
                         self.on_response()
                         self.put_message({'type': 'http.disconnect'})
+
+                elif self.state is ASGICycleState.STARTUP:
+                    if message_type != 'lifespan.startup.complete':
+                        raise RuntimeError(
+                            f"Expected 'lifespan.startup.complete', received: {message_type}"
+                        )
 
             def on_request(self, headers, status_code):
                 self.response['statusCode'] = status_code
