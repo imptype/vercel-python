@@ -414,6 +414,7 @@ elif 'app' in __vc_variables:
                     raise LifespanFailure(self.exception)
 
         import threading
+        from contextlib import ExitStack
 
         loop = asyncio.new_event_loop()
         lock = threading.Lock()
