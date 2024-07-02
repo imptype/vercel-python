@@ -193,33 +193,20 @@ elif 'app' in __vc_variables:
                 self.app_queue = None
                 self.response = {}
 
-            def __call__(self, app, body):
+            async def __call__(self, app, body):
                 """
                 Receives the application and any body included in the request, then builds the
                 ASGI instance using the connection scope.
                 Runs until the response is completely read from the application.
                 """
                 if _use_legacy_asyncio:
-                    try:
-                        loop = asyncio.get_running_loop()
-                    except RuntimeError:
-                        loop = asyncio.new_event_loop()
+                    loop = asyncio.get_running_loop()
                     self.app_queue = asyncio.Queue(loop=loop)
                 else:
                     self.app_queue = asyncio.Queue()
                 self.put_message({'type': 'http.request', 'body': body, 'more_body': False})
-
-                asgi_instance = app(self.scope, self.receive, self.send)
-
-                if _use_legacy_asyncio:
-                    asgi_task = loop.create_task(asgi_instance)
-                    loop.run_until_complete(asgi_task)
-                else:
-                    asyncio.run(self.run_asgi_instance(asgi_instance))
+                await app(self.scope, self.receive, self.send)
                 return self.response
-
-            async def run_asgi_instance(self, asgi_instance):
-                await asgi_instance
 
             def put_message(self, message):
                 self.app_queue.put_nowait(message)
@@ -274,6 +261,12 @@ elif 'app' in __vc_variables:
                     self.response['body'] = base64.b64encode(self.body).decode('utf-8')
                     self.response['encoding'] = 'base64'
 
+        import threading
+
+        loop = asyncio.new_event_loop()
+        lock = threading.Lock()
+        thread = threading.Thread(target = loop.run_forever)
+
         def vc_handler(event, context):
             payload = json.loads(event['body'])
 
@@ -314,8 +307,13 @@ elif 'app' in __vc_variables:
                 'raw_path': path.encode(),
             }
 
+            with lock:
+                if not loop.is_running():
+                    thread.start()
+
             asgi_cycle = ASGICycle(scope)
-            response = asgi_cycle(__vc_module.app, body)
+            coro = asgi_cycle(__vc_module.app, body)
+            response = asyncio.run_coroutine_threadsafe(coro, loop).result()
             return response
 
 else:
