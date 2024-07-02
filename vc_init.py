@@ -461,13 +461,13 @@ elif 'app' in __vc_variables:
                 'raw_path': path.encode(),
             }
 
-            with lock:
-                if not loop.is_running():
-                    thread.start()
-
             with ExitStack() as stack:
-                lifespan = Lifespan(__vc_module.app)
-                stack.enter_context(lifespan)
+
+                with lock:
+                    if not loop.is_running():
+                        thread.start()
+                        lifespan = Lifespan(__vc_module.app)
+                        stack.enter_context(lifespan)
 
                 asgi_cycle = ASGICycle(scope)
                 coro = asgi_cycle(__vc_module.app, body)
