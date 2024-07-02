@@ -413,6 +413,7 @@ elif 'app' in __vc_variables:
                 if self.state is LifespanCycleState.FAILED:
                     raise LifespanFailure(self.exception)
 
+        import logging
         import threading
         from contextlib import ExitStack
 
