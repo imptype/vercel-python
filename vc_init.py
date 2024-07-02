@@ -307,19 +307,19 @@ elif 'app' in __vc_variables:
                 self.shutdown_event = asyncio.Event()
 
 
-            def __enter__(self) -> None:
-                """Runs the event loop for application startup."""
-                loop.create_task(self.run())
-                asyncio.run_coroutine_threadsafe(self.startup(), loop).result()
+            # def __enter__(self) -> None:
+            #     """Runs the event loop for application startup."""
+            #     loop.create_task(self.run())
+            #     asyncio.run_coroutine_threadsafe(self.startup(), loop).result()
 
-            def __exit__(
-                self,
-                exc_type,
-                exc_value,
-                traceback,
-            ) -> None:
-                """Runs the event loop for application shutdown."""
-                asyncio.run_coroutine_threadsafe(self.shutdown(), loop).result()
+            # def __exit__(
+            #     self,
+            #     exc_type,
+            #     exc_value,
+            #     traceback,
+            # ) -> None:
+            #     """Runs the event loop for application shutdown."""
+            #     # asyncio.run_coroutine_threadsafe(self.shutdown(), loop).result()
 
             async def run(self):
                 """Calls the application with the `lifespan` connection scope."""
@@ -461,18 +461,17 @@ elif 'app' in __vc_variables:
                 'raw_path': path.encode(),
             }
 
-            with ExitStack() as stack:
+            with lock:
+                if not loop.is_running():
+                    thread.start()
+                    lifespan = Lifespan(__vc_module.app)
+                    loop.create_task(lifespan.run())
+                    asyncio.run_coroutine_threadsafe(lifespan.startup(), loop).result()
 
-                with lock:
-                    if not loop.is_running():
-                        thread.start()
-                        lifespan = Lifespan(__vc_module.app)
-                        stack.enter_context(lifespan)
-
-                asgi_cycle = ASGICycle(scope)
-                coro = asgi_cycle(__vc_module.app, body)
-                response = asyncio.run_coroutine_threadsafe(coro, loop).result()
-                return response
+            asgi_cycle = ASGICycle(scope)
+            coro = asgi_cycle(__vc_module.app, body)
+            response = asyncio.run_coroutine_threadsafe(coro, loop).result()
+            return response
 
 else:
     print('Missing variable `handler` or `app` in file "__VC_HANDLER_ENTRYPOINT".')
