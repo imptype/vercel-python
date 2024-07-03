@@ -263,6 +263,7 @@ elif 'app' in __vc_variables:
                     self.response['encoding'] = 'base64'
 
         import threading
+        import traceback
 
         lock = threading.Lock()
         loop = asyncio.new_event_loop()
