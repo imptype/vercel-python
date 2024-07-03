@@ -270,18 +270,23 @@ elif 'app' in __vc_variables:
         thread = threading.Thread(target = loop.run_forever)
 
         async def startup(app, lifespan):
+            setattr(app, '__lifespan_debug', [])
             async with lifespan(app):
                 try:
                     entered_lifespan_event.set()
                     print('Wait start')
+                    app.__lifespan_debug.append(1)
                     await asyncio.Event().wait()  # wait indefinitely / never reach lifespan shutdown
+                    app.__lifespan_debug.append(2)
                     print('Wait end')
                 except BaseException as e:
+                    app.__lifespan_debug.append(str(e))
                     print(e)
                     print(''.join(traceback.TracebackException.from_exception(error).format()))
                 finally:
+                    app.__lifespan_debug.append(4)
                     print('Stopping because lifespan was closed')
-                    loop.stop() # first time deployments (not cold starts) closes the lifespan
+                    #loop.stop() # first time deployments (not cold starts) closes the lifespan
 
         def vc_handler(event, context):
             payload = json.loads(event['body'])
