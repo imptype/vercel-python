@@ -206,6 +206,7 @@ elif 'app' in __vc_variables:
                     self.app_queue = asyncio.Queue()
 
                 self.put_message({'type': 'http.request', 'body': body, 'more_body': False})
+                print('scope', scope)
                 await app(self.scope, self.receive, self.send)
                 return self.response
 
