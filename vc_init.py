@@ -274,7 +274,7 @@ elif 'app' in __vc_variables:
                 try:
                     entered_lifespan_event.set()
                     await asyncio.Event().wait()  # wait indefinitely / never reach lifespan shutdown
-                except Exception as e:
+                except BaseException as e:
                     print(e)
                     print(''.join(traceback.TracebackException.from_exception(error).format()))
                 finally:
