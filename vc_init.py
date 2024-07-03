@@ -321,7 +321,7 @@ elif 'app' in __vc_variables:
                     thread.start()
 
                     # do lifespan startup. currently only supports starlette's lifespan, located in app.router.lifespan_context
-                    lifespan = getattr(getattr(app, 'router', object()), 'lifespan_context', None)
+                    lifespan = getattr(getattr(__vc_module.app, 'router', object()), 'lifespan_context', None)
 
                     if lifespan:
                         asyncio.run_coroutine_threadsafe(startup(__vc_module.app, lifespan), loop)
