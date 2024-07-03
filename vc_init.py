@@ -281,8 +281,10 @@ elif 'app' in __vc_variables:
                     print('Wait end')
                 except BaseException as e:
                     app.__lifespan_debug.append(str(e))
+                    app.__lifespan_debug.append(repr(e))
+                    app.__lifespan_debug.append(''.join(traceback.TracebackException.from_exception(e).format()))
                     print(e)
-                    print(''.join(traceback.TracebackException.from_exception(error).format()))
+                    print(''.join(traceback.TracebackException.from_exception(e).format()))
                 finally:
                     app.__lifespan_debug.append(4)
                     print('Stopping because lifespan was closed')
