@@ -266,7 +266,13 @@ elif 'app' in __vc_variables:
 
         lock = threading.Lock()
         loop = asyncio.new_event_loop()
+        entered_lifespan_event = asyncio.Event()
         thread = threading.Thread(target = loop.run_forever)
+
+        async def startup(app, lifespan):
+            async with lifespan(app):
+                entered_lifespan_event.set()
+                await asyncio.Event().wait() # wait indefinitely / never reach lifespan shutdown
 
         def vc_handler(event, context):
             payload = json.loads(event['body'])
