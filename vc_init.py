@@ -274,6 +274,9 @@ elif 'app' in __vc_variables:
                 try:
                     entered_lifespan_event.set()
                     await asyncio.Event().wait()  # wait indefinitely / never reach lifespan shutdown
+                except Exception as e:
+                    print(e)
+                    print(''.join(traceback.TracebackException.from_exception(error).format()))
                 finally:
                     print('Stopping because lifespan was closed')
                     loop.stop() # first time deployments (not cold starts) closes the lifespan
