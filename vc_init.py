@@ -266,13 +266,7 @@ elif 'app' in __vc_variables:
 
         lock = threading.Lock()
         loop = asyncio.new_event_loop()
-        entered_lifespan_event = asyncio.Event()
         thread = threading.Thread(target = loop.run_forever)
-
-        async def startup(app, lifespan):
-            async with lifespan(app):
-                entered_lifespan_event.set()
-                await asyncio.Event().wait() # wait indefinitely / never reach lifespan shutdown
 
         def vc_handler(event, context):
             payload = json.loads(event['body'])
@@ -320,11 +314,14 @@ elif 'app' in __vc_variables:
                     # start running shared event loop in another thread
                     thread.start()
 
-                    # do lifespan startup, starlette lifespan is located in app.router.lifespan_context
-                    asyncio.run_coroutine_threadsafe(startup(__vc_module.app, __vc_module.app.router.lifespan_context), loop)
+                    # do lifespan startup. currently only supports starlette's lifespan, located in app.router.lifespan_context
+                    lifespan = getattr(getattr(app, 'router', object()), 'lifespan_context', None)
 
-                    # wait for startup to finish, won't hang because it's in another thread
-                    asyncio.run_coroutine_threadsafe(entered_lifespan_event.wait(), loop).result()
+                    if lifespan:
+                        asyncio.run_coroutine_threadsafe(startup(__vc_module.app, lifespan), loop)
+
+                        # wait for startup to finish, won't hang because it's in another thread
+                        asyncio.run_coroutine_threadsafe(entered_lifespan_event.wait(), loop).result()
 
             asgi_cycle = ASGICycle(scope)
             coro = asgi_cycle(__vc_module.app, body)
