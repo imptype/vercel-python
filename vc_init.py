@@ -264,8 +264,8 @@ elif 'app' in __vc_variables:
 
         import threading
 
-        loop = None
         lock = threading.Lock()
+        loop = asyncio.new_event_loop()
         entered_lifespan_event = asyncio.Event()
         thread = threading.Thread(target = loop.run_forever)
 
