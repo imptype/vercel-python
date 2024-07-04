@@ -268,29 +268,7 @@ elif 'app' in __vc_variables:
 
         lock = threading.Lock()
         loop = asyncio.new_event_loop()
-        entered_lifespan_event = asyncio.Event()
         thread = threading.Thread(target = loop.run_forever)
-
-        async def startup(app, lifespan):
-            setattr(app, '__lifespan_debug', [])
-            async with lifespan(app):
-                try:
-                    entered_lifespan_event.set()
-                    print('Wait start')
-                    app.__lifespan_debug.append(1)
-                    await asyncio.Event().wait()  # wait indefinitely / never reach lifespan shutdown
-                    app.__lifespan_debug.append(2)
-                    print('Wait end')
-                except BaseException as e:
-                    app.__lifespan_debug.append(str(e))
-                    app.__lifespan_debug.append(repr(e))
-                    app.__lifespan_debug.append(''.join(traceback.TracebackException.from_exception(e).format()))
-                    print(e)
-                    print(''.join(traceback.TracebackException.from_exception(e).format()))
-                finally:
-                    app.__lifespan_debug.append(4)
-                    print('Stopping because lifespan was closed')
-                    #loop.stop() # first time deployments (not cold starts) closes the lifespan
 
         def vc_handler(event, context):
             payload = json.loads(event['body'])
@@ -339,13 +317,8 @@ elif 'app' in __vc_variables:
                     thread.start()
 
                     # do lifespan startup. currently only supports starlette's lifespan, located in app.router.lifespan_context
-                    lifespan = getattr(getattr(__vc_module.app, 'router', object()), 'lifespan_context', None)
-
-                    if lifespan:
-                        asyncio.run_coroutine_threadsafe(startup(__vc_module.app, lifespan), loop)
-
-                        # wait for startup to finish, won't hang because it's in another thread
-                        asyncio.run_coroutine_threadsafe(entered_lifespan_event.wait(), loop).result()
+                    if lifespan := getattr(getattr(__vc_module.app, 'router', object()), 'lifespan_context', None):
+                        asyncio.run_coroutine_threadsafe(lifespan(__vc_module.app).__aenter__(), loop).result()
 
             asgi_cycle = ASGICycle(scope)
             coro = asgi_cycle(__vc_module.app, body)
