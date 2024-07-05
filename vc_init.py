@@ -318,7 +318,15 @@ elif 'app' in __vc_variables:
 
                     # do lifespan startup. currently only supports starlette's lifespan, located in app.router.lifespan_context
                     if lifespan := getattr(getattr(__vc_module.app, 'router', object()), 'lifespan_context', None):
-                        asyncio.run_coroutine_threadsafe(lifespan(__vc_module.app).__aenter__(), loop).result()
+                        try:
+                            print('enter lifespan')
+                            asyncio.run_coroutine_threadsafe(lifespan(__vc_module.app).__aenter__(), loop).result()
+                        except BaseException as e:
+                            print('exit lifespan')
+                            print(e)
+                            print(''.join(traceback.TracebackException.from_exception(e).format()))
+                        finally:
+                            print('pass lifespan')
 
             asgi_cycle = ASGICycle(scope)
             coro = asgi_cycle(__vc_module.app, body)
