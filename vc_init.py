@@ -322,7 +322,8 @@ elif 'app' in __vc_variables:
                         print2 = lambda x : (print(x), __vc_module.app.__lifespan_debug.append(x))
                         try:
                             print2('enter lifespan')
-                            asyncio.run_coroutine_threadsafe(lifespan(__vc_module.app).__aenter__(), loop).result()
+                            setattr(loop, '__lifespan_context_', lifespan_context := lifespan(__vc_module.app))
+                            asyncio.run_coroutine_threadsafe(lifespan_context.__aenter__(), loop).result()
                         except BaseException as e:
                             print2('exit lifespan')
                             print2(e)
