@@ -318,18 +318,9 @@ elif 'app' in __vc_variables:
 
                     # do lifespan startup. currently only supports starlette's lifespan, located in app.router.lifespan_context
                     if lifespan := getattr(getattr(__vc_module.app, 'router', object()), 'lifespan_context', None):
-                        setattr(__vc_module.app, '__lifespan_debug', [])
-                        print2 = lambda x : (print(x), __vc_module.app.__lifespan_debug.append(x))
-                        try:
-                            print2('enter lifespan')
-                            setattr(loop, '__lifespan_context_', lifespan_context := lifespan(__vc_module.app))
-                            asyncio.run_coroutine_threadsafe(lifespan_context.__aenter__(), loop).result()
-                        except BaseException as e:
-                            print2('exit lifespan')
-                            print2(e)
-                            print2(''.join(traceback.TracebackException.from_exception(e).format()))
-                        finally:
-                            print2('pass lifespan')
+                        # keep reference so gc doesn't raise generatorexit
+                        setattr(loop, '__lifespan_context', lifespan_context := lifespan(__vc_module.app))
+                        asyncio.run_coroutine_threadsafe(lifespan_context.__aenter__(), loop).result()
 
             asgi_cycle = ASGICycle(scope)
             coro = asgi_cycle(__vc_module.app, body)
