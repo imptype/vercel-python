@@ -8,13 +8,13 @@ This is a copy of [@vercel/python@4.3.0][1] except with 2 things changed in `vc_
 > Vercel does not support lifespan. Lifespan is used init async code, like creating a database connection pool. This runs once per instance, not per request, so whatever is in there contributes to the coldstart time. A reference is kept so the Garbage Collector won't silently raise `GeneratorExit` on it. Finally, this only supports Starlette's lifespan which located in `app.router.lifespan_context`. This part will be skipped if no lifespan was found.
 
 ## Usage
-In your `vercel.json` file, change the npm package to use to `@imptype/vercel-python@4.3.33`, for example:
+In your `vercel.json` file, change the npm package to use to `@imptype/vercel-python@4.3.34`, for example:
 ```json
 {
   "builds": [
     {
       "src": "main.py",
-      "use": "@imptype/vercel-python@4.3.33"
+      "use": "@imptype/vercel-python@4.3.34"
     }
   ],
   "routes": [
